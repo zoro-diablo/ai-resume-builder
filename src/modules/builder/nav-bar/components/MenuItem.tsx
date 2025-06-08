@@ -23,7 +23,7 @@ export const NavMenuItem = ({ caption, popoverChildren }: INavMenuItemProps) => 
         size="small"
         onClick={handleClick}
         aria-describedby={'mark'}
-        sx={{ fontSize: { xs: '10px', lg: '13px' } }}
+        sx={{ fontSize: { xs: '10px', lg: '13px' }, color: 'black' }}
         endIcon={
           <Image
             src={'/icons/dropdown-arrow.svg'}
@@ -36,7 +36,12 @@ export const NavMenuItem = ({ caption, popoverChildren }: INavMenuItemProps) => 
       >
         {caption}
       </StyledButton>
-      <NavMenuPopover isOpen={!!anchorEl} anchorElement={anchorEl} id="mark" onClose={handleClose}>
+      <NavMenuPopover
+        isOpen={!!anchorEl}
+        anchorElement={anchorEl}
+        id="mark"
+        onClose={handleClose}
+      >
         {popoverChildren}
       </NavMenuPopover>
     </Fragment>

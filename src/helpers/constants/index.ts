@@ -42,6 +42,14 @@ export const AVAILABLE_TEMPLATES: ITemplate = {
       ssr: false,
     }),
   },
+  minimal: {
+    id: 'minimal',
+    name: 'Minimal Resume',
+    thumbnail: '/templates/minimal.png',
+    component: dynamic(() => import('@/templates/minimal/MinimalTemplate'), {
+      ssr: false,
+    }),
+  },
 };
 
 export const CUSTOM_THEME_COLOR: IThemeColor = {

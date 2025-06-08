@@ -15,11 +15,11 @@ export const PrintResume: React.FC<{ isMenuButton?: boolean }> = ({ isMenuButton
   }, []);
 
   if (isMenuButton) {
-    return <MenuItem onClick={globalThis?.print}>Download as PDF</MenuItem>;
+    return <MenuItem onClick={globalThis?.print}  sx={{ color: 'black'}}>Download as PDF</MenuItem>;
   }
 
   return (
-    <StyledButton onClick={globalThis?.print} variant="outlined">
+    <StyledButton onClick={globalThis?.print} variant="contained" sx={{ color: 'black', background: 'white' }}>
       Download as PDF
     </StyledButton>
   );

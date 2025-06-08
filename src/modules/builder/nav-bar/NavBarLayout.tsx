@@ -129,10 +129,10 @@ const NavBarLayout = () => {
   }, []);
 
   return (
-    <nav className="h-14 w-full bg-resume-800 relative flex py-2.5 pl-2 md:pl-5 pr-1 nd:pr-4 items-center shadow-level-8dp z-20 print:hidden">
-      <Link href="/">
+    <nav className="h-14 w-full bg-white relative flex py-2.5 pl-2 md:pl-5 pr-1 nd:pr-4 items-center drop-shadow-md z-20 print:hidden">
+      {/* <Link href="/">
         <Image src={'/icons/resume-icon.png'} alt="logo" height="36" width="36" />
-      </Link>
+      </Link> */}
       <div className="flex-auto flex justify-between items-center xs:ml-3 md:ml-5">
         <NavBarMenu>
           <NavMenuItem
@@ -143,10 +143,11 @@ const NavBarLayout = () => {
         </NavBarMenu>
         <div className="hidden md:flex">
           <NavBarActions>
-            <StyledButton variant="text" onClick={exportResumeData}>
+            <StyledButton variant="text" sx={{ color: 'black' }} onClick={exportResumeData}>
               Export
             </StyledButton>
             <StyledButton
+            sx={{ color: 'black' }}
               variant="text"
               onClick={() => {
                 if (fileInputRef.current) {
@@ -188,8 +189,9 @@ const NavBarLayout = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={exportResumeData}>Export</MenuItem>
+        <MenuItem sx={{ color: 'black' }} onClick={exportResumeData}>Export</MenuItem>
         <MenuItem
+        sx={{ color: 'black' }}
           onClick={() => {
             if (fileInputRef.current) {
               const fileElement = fileInputRef.current as HTMLInputElement;

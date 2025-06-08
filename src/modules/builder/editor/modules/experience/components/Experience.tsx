@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Fragment, useCallback } from 'react';
+import React, { ChangeEvent, Fragment, useCallback, useState } from 'react';
 import TextField from '@mui/material/TextField';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
@@ -6,7 +6,15 @@ import { useExperiences } from '@/stores/experience';
 import { IExperienceItem } from '@/stores/experience.interface';
 import { SwitchWidget } from '@/helpers/common/atoms/Switch';
 import { RichtextEditor } from '@/helpers/common/components/richtext';
+import  AIButton  from '@/helpers/common/components/button/AIButton';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { DATE_PICKER_FORMAT } from '@/helpers/constants';
+
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not defined');
+}
+const genAI = new GoogleGenerativeAI(apiKey);
 
 interface IExperienceProps {
   experienceInfo: IExperienceItem;
@@ -14,6 +22,8 @@ interface IExperienceProps {
 }
 
 const Experience: React.FC<IExperienceProps> = ({ experienceInfo, currentIndex }) => {
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+
   const onChangeHandler = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (name: string, value: any) => {
@@ -60,10 +70,57 @@ const Experience: React.FC<IExperienceProps> = ({ experienceInfo, currentIndex }
     [onChangeHandler]
   );
 
+  const handleGenerateSummary = async () => {
+    setIsLoadingSummary(true);
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = `Generate a concise and professional summary of work experience for a resume based on: Company: ${experienceInfo.name || 'a company'}, Position: ${experienceInfo.position || 'a professional role'}, Description: ${experienceInfo.summary || 'general professional responsibilities'}. 
+
+Requirements:
+- Keep it under 80 words total
+- Format as HTML bullet points using <ul> and <li> tags
+- Each bullet point should start with an action verb
+- Focus on achievements and responsibilities
+- Make it ATS-friendly
+
+Return only the HTML <ul><li>content</li></ul> structure without any additional text or formatting.`;
+      
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      let generatedText = await response.text();
+      
+      // Clean up the response to ensure it's proper HTML
+      generatedText = generatedText.trim();
+      
+      // If the response doesn't start with <ul>, wrap it
+      if (!generatedText.startsWith('<ul>')) {
+        // Convert plain bullet points to HTML if needed
+        if (generatedText.includes('•') || generatedText.includes('*')) {
+          const lines = generatedText.split('\n').filter(line => line.trim());
+          const listItems = lines.map(line => {
+            const cleanLine = line.replace(/^[•*-]\s*/, '').trim();
+            return cleanLine ? `<li>${cleanLine}</li>` : '';
+          }).filter(item => item);
+          generatedText = `<ul>${listItems.join('')}</ul>`;
+        } else {
+          // Fallback: wrap entire content in a single bullet point
+          generatedText = `<ul><li>${generatedText}</li></ul>`;
+        }
+      }
+      
+      onChangeHandler('summary', generatedText);
+    } catch (error) {
+      console.error('Error with Gemini API:', error);
+      onChangeHandler('summary', '<ul><li>Error generating content. Please try again.</li></ul>');
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
+
   return (
     <Fragment>
       <TextField
-        label="Comapany name"
+        label="Company name"
         variant="filled"
         value={experienceInfo.name}
         onChange={(e: ChangeEvent<HTMLInputElement>) => {
@@ -143,6 +200,11 @@ const Experience: React.FC<IExperienceProps> = ({ experienceInfo, currentIndex }
         onChange={onSummaryChange}
         name="summary"
       />
+        <div className='text-center'>
+          <AIButton loading={isLoadingSummary} onClick={handleGenerateSummary}>
+            Enhance with AI
+          </AIButton>
+        </div>
     </Fragment>
   );
 };

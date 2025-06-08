@@ -6,15 +6,9 @@ import { useExperiences } from '@/stores/experience';
 import { IExperienceItem } from '@/stores/experience.interface';
 import { SwitchWidget } from '@/helpers/common/atoms/Switch';
 import { RichtextEditor } from '@/helpers/common/components/richtext';
-import  AIButton  from '@/helpers/common/components/button/AIButton';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import AIButton from '@/helpers/common/components/button/AIButton';
+import { useApiKey } from '@/helpers/common/components/Ai/ApiKeyDialog'; // Import the centralized API key hook
 import { DATE_PICKER_FORMAT } from '@/helpers/constants';
-
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not defined');
-}
-const genAI = new GoogleGenerativeAI(apiKey);
 
 interface IExperienceProps {
   experienceInfo: IExperienceItem;
@@ -23,6 +17,9 @@ interface IExperienceProps {
 
 const Experience: React.FC<IExperienceProps> = ({ experienceInfo, currentIndex }) => {
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  
+  // Use the custom hook to access the user's API key and the AI instance
+  const { apiKey, getGenAI } = useApiKey();
 
   const onChangeHandler = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,8 +68,19 @@ const Experience: React.FC<IExperienceProps> = ({ experienceInfo, currentIndex }
   );
 
   const handleGenerateSummary = async () => {
+    // Guard against function calls when the key is not available
+    if (!apiKey) {
+      onChangeHandler(
+        'summary',
+        '<p>Error: API Key is not set. Please add it via the "API Key" button in the navigation bar.</p>'
+      );
+      return;
+    }
+
     setIsLoadingSummary(true);
     try {
+      // Get the generative AI instance from the hook
+      const genAI = getGenAI();
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const prompt = `Generate a concise and professional summary of work experience for a resume based on: Company: ${experienceInfo.name || 'a company'}, Position: ${experienceInfo.position || 'a professional role'}, Description: ${experienceInfo.summary || 'general professional responsibilities'}. 
 
@@ -84,34 +92,34 @@ Requirements:
 - Make it ATS-friendly
 
 Return only the HTML <ul><li>content</li></ul> structure without any additional text or formatting.`;
-      
+
       const result = await model.generateContent(prompt);
       const response = await result.response;
       let generatedText = await response.text();
-      
+
       // Clean up the response to ensure it's proper HTML
-      generatedText = generatedText.trim();
-      
+      generatedText = generatedText.trim().replace(/```html\s*/gi, '').replace(/```/g, '');
+
       // If the response doesn't start with <ul>, wrap it
       if (!generatedText.startsWith('<ul>')) {
-        // Convert plain bullet points to HTML if needed
-        if (generatedText.includes('•') || generatedText.includes('*')) {
-          const lines = generatedText.split('\n').filter(line => line.trim());
-          const listItems = lines.map(line => {
-            const cleanLine = line.replace(/^[•*-]\s*/, '').trim();
-            return cleanLine ? `<li>${cleanLine}</li>` : '';
-          }).filter(item => item);
-          generatedText = `<ul>${listItems.join('')}</ul>`;
-        } else {
-          // Fallback: wrap entire content in a single bullet point
-          generatedText = `<ul><li>${generatedText}</li></ul>`;
-        }
+        const lines = generatedText.split('\n').filter(line => line.trim());
+        const listItems = lines.map(line => {
+          const cleanLine = line.replace(/^[•*-]\s*/, '').trim();
+          return cleanLine ? `<li>${cleanLine}</li>` : '';
+        }).filter(item => item);
+        generatedText = `<ul>${listItems.join('')}</ul>`;
       }
       
       onChangeHandler('summary', generatedText);
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Error with Gemini API:', error);
-      onChangeHandler('summary', '<ul><li>Error generating content. Please try again.</li></ul>');
+      // Provide user-friendly error messages in the editor
+      if (error.message.includes('API_KEY_INVALID')) {
+        onChangeHandler('summary', '<p>Error: The provided API Key is invalid. Please check and update it.</p>');
+      } else {
+        onChangeHandler('summary', `<p>Error generating text: ${error.message}</p>`);
+      }
     } finally {
       setIsLoadingSummary(false);
     }
@@ -200,11 +208,16 @@ Return only the HTML <ul><li>content</li></ul> structure without any additional 
         onChange={onSummaryChange}
         name="summary"
       />
-        <div className='text-center'>
-          <AIButton loading={isLoadingSummary} onClick={handleGenerateSummary}>
-            Enhance with AI
-          </AIButton>
-        </div>
+      <div className='text-center'>
+        <AIButton
+          loading={isLoadingSummary}
+          onClick={handleGenerateSummary}
+          disabled={!apiKey}
+          title={!apiKey ? 'Please set your API key to use AI features' : 'Enhance with AI'}
+        >
+          Enhance with AI
+        </AIButton>
+      </div>
     </Fragment>
   );
 };

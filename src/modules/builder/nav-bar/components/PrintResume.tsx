@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 import { StyledButton } from '../atoms';
-import { MenuItem } from '@mui/material';
+import { Button, MenuItem } from '@mui/material';
+import { MdDownload } from 'react-icons/md';
 
 export const PrintResume: React.FC<{ isMenuButton?: boolean }> = ({ isMenuButton }) => {
   useEffect(() => {
@@ -19,8 +20,13 @@ export const PrintResume: React.FC<{ isMenuButton?: boolean }> = ({ isMenuButton
   }
 
   return (
-    <StyledButton onClick={globalThis?.print} variant="contained" sx={{ color: 'black', background: 'white' }}>
-      Download as PDF
-    </StyledButton>
+   <Button
+      onClick={() => globalThis.print()}
+      variant="outlined"
+      startIcon={<MdDownload />}
+      sx={{ color: 'black', background: 'white' }}
+    >
+      Download
+    </Button>
   );
 };

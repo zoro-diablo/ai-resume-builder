@@ -8,14 +8,8 @@ import { useAwards } from '@/stores/awards';
 import { IAwardItem } from '@/stores/awards.interface';
 import { RichtextEditor } from '@/helpers/common/components/richtext';
 import AIButton from '@/helpers/common/components/button/AIButton';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { useApiKey } from '@/helpers/common/components/Ai/ApiKeyDialog'; // Import the centralized API key hook
 import { DATE_PICKER_FORMAT } from '@/helpers/constants';
-
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error('NEXT_PUBLIC_GEMINI_API_KEY is not defined');
-}
-const genAI = new GoogleGenerativeAI(apiKey);
 
 interface IAwardComp {
   awardInfo: IAwardItem;
@@ -24,6 +18,9 @@ interface IAwardComp {
 
 const AwardComp: React.FC<IAwardComp> = ({ awardInfo, currentIndex }) => {
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use the custom hook to access the user's API key and the AI instance
+  const { apiKey, getGenAI } = useApiKey();
 
   const onChangeHandler = useCallback(
     (name: string, value: any) => {
@@ -58,19 +55,26 @@ const AwardComp: React.FC<IAwardComp> = ({ awardInfo, currentIndex }) => {
   );
 
   const handleGenerateSummary = async () => {
+    // Guard against function calls when the key is not available
+    if (!apiKey) {
+      onChangeHandler(
+        'summary',
+        '<p>Error: API Key is not set. Please add it via the "API Key" button in the navigation bar.</p>'
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // Get the generative AI instance from the hook
+      const genAI = getGenAI();
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const prompt = `You are an expert resume-writing assistant.
 Return only raw HTML—no markdown code fences or extra text.
 Generate concise, ATS-friendly bullet points for a resume's "Awards" section based on:
 Award: ${awardInfo.title || 'an award'},
 Awarded by: ${awardInfo.awarder || 'an organization'},
-Date: ${
-        awardInfo.date
-          ? dayjs(awardInfo.date).format('MMM YYYY')
-          : 'a date'
-      },
+Date: ${awardInfo.date ? dayjs(awardInfo.date).format('MMM YYYY') : 'a date'},
 Description: ${awardInfo.summary || 'award details'}.
 
 Requirements:
@@ -95,13 +99,14 @@ Requirements:
       }
 
       onChangeHandler('summary', text);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating award bullets:', error);
-      // fallback error message
-      onChangeHandler(
-        'summary',
-        '<ul><li>Error generating content. Please try again.</li></ul>'
-      );
+      // Provide user-friendly error messages in the editor
+      if (error.message.includes('API_KEY_INVALID')) {
+        onChangeHandler('summary', '<p>Error: The provided API Key is invalid. Please check and update it.</p>');
+      } else {
+        onChangeHandler('summary', `<p>Error generating text: ${error.message}</p>`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +165,12 @@ Requirements:
       />
 
       <div className='flex justify-center'>
-        <AIButton loading={isLoading} onClick={handleGenerateSummary}>
+        <AIButton
+          loading={isLoading}
+          onClick={handleGenerateSummary}
+          disabled={!apiKey}
+          title={!apiKey ? 'Please set your API key to use AI features' : 'Enhance with AI'}
+        >
           Enhance with AI
         </AIButton>
       </div>

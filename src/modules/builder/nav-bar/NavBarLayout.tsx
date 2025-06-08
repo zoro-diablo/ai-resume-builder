@@ -1,3 +1,5 @@
+// src/components/layout/NavBar/NavBarLayout.tsx
+
 import { ChangeEvent, useCallback, useRef, useState } from 'react';
 import { NavBarActions, NavBarMenu, StyledButton } from './atoms';
 import {
@@ -27,11 +29,16 @@ import { useEducations } from '@/stores/education';
 import { useExperiences } from '@/stores/experience';
 import { useVoluteeringStore } from '@/stores/volunteering';
 import { Menu, MenuItem } from '@mui/material';
+import { ApiKeyDialog } from '@/helpers/common/components/Ai/ApiKeyDialog';
+import ResumeAnalysisDialog from '@/helpers/common/components/Ai/ResumeAnalysisDialog';
+import AIButton from '@/helpers/common/components/button/AIButton';
 
 const TOTAL_TEMPLATES_AVAILABLE = Object.keys(AVAILABLE_TEMPLATES).length;
 
 const NavBarLayout = () => {
   const [openToast, setOpenToast] = useState(false);
+  const [isApiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [isAnalysisDialogOpen, setAnalysisDialogOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const fileInputRef = useRef(null);
 
@@ -44,6 +51,7 @@ const NavBarLayout = () => {
   };
 
   const exportResumeData = useCallback(() => {
+    // ... (rest of the function is unchanged)
     const updatedResumeJson = {
       ...DEFAULT_RESUME_JSON,
       basics: {
@@ -75,6 +83,7 @@ const NavBarLayout = () => {
   }, []);
 
   const handleFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    // ... (rest of the function is unchanged)
     const fileObj = event.target.files && event.target.files[0];
     if (!fileObj) {
       return;
@@ -129,7 +138,7 @@ const NavBarLayout = () => {
   }, []);
 
   return (
-    <nav className="h-14 w-full bg-white relative flex py-2.5 pl-2 md:pl-5 pr-1 nd:pr-4 items-center drop-shadow-md z-20 print:hidden">
+    <nav className="h-16 w-full bg-white relative flex py-2.5 pl-2 md:pl-5 pr-1 nd:pr-4 items-center drop-shadow-md z-20 print:hidden">
       {/* <Link href="/">
         <Image src={'/icons/resume-icon.png'} alt="logo" height="36" width="36" />
       </Link> */}
@@ -143,11 +152,18 @@ const NavBarLayout = () => {
         </NavBarMenu>
         <div className="hidden md:flex">
           <NavBarActions>
+            <StyledButton
+              variant="text"
+              sx={{ color: 'black' }}
+              onClick={() => setApiKeyDialogOpen(true)}
+            >
+              API Key
+            </StyledButton>
             <StyledButton variant="text" sx={{ color: 'black' }} onClick={exportResumeData}>
               Export
             </StyledButton>
             <StyledButton
-            sx={{ color: 'black' }}
+              sx={{ color: 'black' }}
               variant="text"
               onClick={() => {
                 if (fileInputRef.current) {
@@ -165,6 +181,13 @@ const NavBarLayout = () => {
                 onChange={handleFileChange}
               />
             </StyledButton>
+            {/* <StyledButton variant="outlined" onClick={() => setAnalysisDialogOpen(true)}>
+              AI Review
+            </StyledButton> */}
+
+            <div className='m-2'>
+              <AIButton onClick={() => setAnalysisDialogOpen(true)}>AI Review</AIButton>
+            </div>
             <PrintResume />
           </NavBarActions>
         </div>
@@ -189,9 +212,20 @@ const NavBarLayout = () => {
           horizontal: 'right',
         }}
       >
-        <MenuItem sx={{ color: 'black' }} onClick={exportResumeData}>Export</MenuItem>
         <MenuItem
-        sx={{ color: 'black' }}
+          sx={{ color: 'black' }}
+          onClick={() => {
+            setApiKeyDialogOpen(true);
+            handleMenuClose();
+          }}
+        >
+          API Key
+        </MenuItem>
+        <MenuItem sx={{ color: 'black' }} onClick={exportResumeData}>
+          Export
+        </MenuItem>
+        <MenuItem
+          sx={{ color: 'black' }}
           onClick={() => {
             if (fileInputRef.current) {
               const fileElement = fileInputRef.current as HTMLInputElement;
@@ -218,6 +252,14 @@ const NavBarLayout = () => {
         }}
         content={'Resume data was successfully imported.'}
       />
+      <ApiKeyDialog open={isApiKeyDialogOpen} onClose={() => setApiKeyDialogOpen(false)} />
+      {/* Conditionally render the dialog to be more efficient */}
+      {isAnalysisDialogOpen && (
+        <ResumeAnalysisDialog
+          open={isAnalysisDialogOpen}
+          onClose={() => setAnalysisDialogOpen(false)}
+        />
+      )}
     </nav>
   );
 };

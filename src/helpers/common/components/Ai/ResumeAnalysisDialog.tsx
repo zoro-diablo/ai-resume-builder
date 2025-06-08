@@ -1,4 +1,3 @@
-// src/helpers/common/components/Ai/ResumeAnalysisDialog.tsx
 
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -42,7 +41,6 @@ const ResumeAnalysisDialog = ({ open, onClose }: ResumeAnalysisDialogProps) => {
   const generateAnalysis = useCallback(async () => {
     if (!open) return;
 
-    // Check if API key is available
     if (!apiKey) {
       setError('Please set your Gemini API key first using the "API Key" button in the navigation bar.');
       setIsLoading(false);
@@ -121,7 +119,6 @@ const ResumeAnalysisDialog = ({ open, onClose }: ResumeAnalysisDialogProps) => {
     }
   }, [open, apiKey, analysis, isLoading, error, generateAnalysis]);
 
-  // Reset state when dialog is closed
   useEffect(() => {
     if (!open) {
       setAnalysis(null);

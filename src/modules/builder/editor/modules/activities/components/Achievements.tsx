@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import { RichtextEditor } from '@/helpers/common/components/richtext';
 import { useActivity } from '@/stores/activity';
 import AIButton from '@/helpers/common/components/button/AIButton';
-import { useApiKey } from '@/helpers/common/components/Ai/ApiKeyDialog'; // Import the centralized API key hook
+import { useApiKey } from '@/helpers/common/components/Ai/ApiKeyDialog'; 
 
 const Achievements: React.FC = () => {
   const activities = useActivity((state) => state.activities);
-  const { updateAchievements } = useActivity.getState(); // Get the update function from the store
+  const { updateAchievements } = useActivity.getState(); 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use the custom hook to access the user's API key and the AI instance
   const { apiKey, getGenAI } = useApiKey();
 
   const handleGenerate = async () => {
-    // Guard against function calls when the key is not available
     if (!apiKey) {
       updateAchievements(
         '<p>Error: API Key is not set. Please add it via the "API Key" button in the navigation bar.</p>'

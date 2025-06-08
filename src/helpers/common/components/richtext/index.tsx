@@ -17,10 +17,9 @@ export const RichtextEditor = memo(({ label, onChange, value, name }: IRichtext)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
   const [editorInstanceCreated, setEditorInstanceCreated] = useState(false);
-  const isInternalChange = useRef(false); // Track if change is from user input
-  const onChangeRef = useRef(onChange); // Store the latest onChange handler
+  const isInternalChange = useRef(false); 
+  const onChangeRef = useRef(onChange);
 
-  // Update the onChange reference when it changes
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
@@ -48,16 +47,13 @@ export const RichtextEditor = memo(({ label, onChange, value, name }: IRichtext)
         editorRef.current = editor;
         setEditorInstanceCreated(true);
 
-        // Set up the change handler with a stable reference
         const handleChange = (newValue: string) => {
           isInternalChange.current = true;
-          // Use the ref to get the latest onChange handler
           onChangeRef.current(newValue);
         };
 
         editor.events.on('change', handleChange);
 
-        // Cleanup function to remove event listener
         return () => {
           if (editor && editor.events) {
             editor.events.off('change', handleChange);
@@ -68,38 +64,31 @@ export const RichtextEditor = memo(({ label, onChange, value, name }: IRichtext)
       initEditor();
     }
 
-    // Cleanup on unmount
     return () => {
       if (editorRef.current && editorRef.current.destruct) {
         editorRef.current.destruct();
         editorRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Remove dependencies to prevent re-initialization
+  }, []); 
 
   useEffect(() => {
     if (editorRef.current && editorInstanceCreated) {
-      // Only update editor value if the change came from outside (not from user typing)
       if (!isInternalChange.current && editorRef.current.value !== value) {
         const selection = editorRef.current.selection;
         const range = selection.createRange();
         
-        // Save cursor position before updating
         const savedRange = range.cloneRange();
         
         editorRef.current.value = value;
         
-        // Restore cursor position after updating
         try {
           selection.selectRange(savedRange);
         } catch (e) {
-          // If restoring position fails, place cursor at end
           selection.setCursorAfter(editorRef.current.editor.lastChild || editorRef.current.editor);
         }
       }
       
-      // Reset the flag
       isInternalChange.current = false;
     }
   }, [value, editorInstanceCreated]);

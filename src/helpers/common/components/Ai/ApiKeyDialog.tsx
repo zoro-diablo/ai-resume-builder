@@ -6,10 +6,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const API_KEY_STORAGE_KEY = 'gemini_api_key';
 
-// Custom hook to manage the API key
 export const useApiKey = () => {
   const [apiKey, setApiKey] = useState<string | null>(() => {
-    // Initialize with localStorage value if available
     if (typeof window !== 'undefined') {
       return localStorage.getItem(API_KEY_STORAGE_KEY);
     }
@@ -17,14 +15,12 @@ export const useApiKey = () => {
   });
 
   useEffect(() => {
-    // Listen for storage changes across tabs/components
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === API_KEY_STORAGE_KEY) {
         setApiKey(e.newValue);
       }
     };
 
-    // Listen for custom events for same-tab updates
     const handleApiKeyUpdate = (e: CustomEvent) => {
       setApiKey(e.detail);
     };
@@ -74,7 +70,6 @@ export const ApiKeyDialog = ({ open, onClose }: ApiKeyDialogProps) => {
 
   useEffect(() => {
     if (open) {
-      // Set current key to existing API key or empty string
       setCurrentKey(apiKey || '');
     }
   }, [open, apiKey]);
@@ -92,7 +87,6 @@ export const ApiKeyDialog = ({ open, onClose }: ApiKeyDialogProps) => {
   };
 
   const handleClose = () => {
-    // Reset currentKey to the saved apiKey when closing without saving
     setCurrentKey(apiKey || '');
     onClose();
   };
